@@ -9,6 +9,7 @@ type ReadSpecFileOptions = {
   readonly host?: undefined | string;
   readonly email?: undefined | string;
   readonly password?: undefined | string;
+  readonly token?: undefined | string;
 };
 
 const DirectusAuthResponse = z.object({
@@ -19,21 +20,15 @@ const DirectusAuthResponse = z.object({
   }),
 });
 
-export const readSpecFile = async (
-  options: ReadSpecFileOptions,
-): Promise<unknown> => {
-  if (typeof options.specFile === `string`) {
-    return JSON.parse(
-      await readFile(options.specFile, { encoding: `utf-8` }),
-    ) as unknown;
+export async function getToken(options: ReadSpecFileOptions): Promise<string> {
+  if (typeof options.token === `string`) {
+    return options.token;
   }
 
-  if (typeof options.host !== `string`) {
-    throw new Error(`Either inputFile or inputUrl must be specified`);
-  }
   if (typeof options.email !== `string`) {
     throw new Error(`email must be specified`);
   }
+
   if (typeof options.password !== `string`) {
     throw new Error(`password must be specified`);
   }
@@ -53,9 +48,27 @@ export const readSpecFile = async (
     .then((response) => response.json())
     .then((json) => DirectusAuthResponse.parse(json));
 
+  return access_token;
+}
+
+export const readSpecFile = async (
+  options: ReadSpecFileOptions,
+): Promise<unknown> => {
+  if (typeof options.specFile === `string`) {
+    return JSON.parse(
+      await readFile(options.specFile, { encoding: `utf-8` }),
+    ) as unknown;
+  }
+
+  if (typeof options.host !== `string`) {
+    throw new Error(`Either inputFile or inputUrl must be specified`);
+  }
+
+  const token = await getToken(options);
+
   return (await fetch(new URL(`/server/specs/oas`, options.host), {
     headers: {
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": `application/json`,
     },
   }).then((response) => response.json())) as unknown;

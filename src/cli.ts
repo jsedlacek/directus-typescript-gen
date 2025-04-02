@@ -35,6 +35,10 @@ const main = async (): Promise<void> => {
       description: `Input spec file`,
       type: `string`,
     },
+    token: {
+      description: `Token`,
+      type: `string`,
+    },
     typeName: {
       alias: `t`,
       default: `Schema`,
